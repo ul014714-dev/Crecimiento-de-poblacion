@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="LogiSim – Simulador interactivo de crecimiento logístico de epidemias. Visualiza la propagación de enfermedades con el modelo P(t) = K / (1 + A·e^(-rt))." />
+  <meta name="keywords"    content="logístico, simulador, epidemiología, crecimiento, virus, modelo matemático" />
+  <meta name="author"      content="LogiSim" />
+  <title>LogiSim – Simulador de Crecimiento Logístico</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- Fondo decorativo -->
+<div class="bg-grid" aria-hidden="true"></div>
+
+<!-- ════════════════════════════════════════
+     Aplicación Principal
+════════════════════════════════════════ -->
+<div class="app-wrapper">
+
+  <!-- ── Header ── -->
+  <header class="app-header">
+    <div class="logo-group">
+      <div class="logo-icon" aria-hidden="true">📈</div>
+      <div class="logo-text">
+        <h1>LogiSim</h1>
+        <span>Simulador de Crecimiento Logístico</span>
+      </div>
+    </div>
+    <div class="header-badge" role="status" aria-label="Sistema en línea">
+      <div class="badge-dot"></div>
+      Sistema activo
+    </div>
+  </header>
+
+  <!-- ── Pestañas de vista ── -->
+  <nav class="view-tabs" role="tablist" aria-label="Navegación de vistas">
+    <button id="tab-form"
+            class="tab-btn active"
+            role="tab"
+            aria-selected="true"
+            aria-controls="view-form">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <rect x="3" y="3" width="18" height="18" rx="2"/>
+        <line x1="9" y1="9" x2="15" y2="9"/>
+        <line x1="9" y1="13" x2="15" y2="13"/>
+        <line x1="9" y1="17" x2="12" y2="17"/>
+      </svg>
+      Parámetros
+    </button>
+
+    <button id="tab-results"
+            class="tab-btn"
+            role="tab"
+            aria-selected="false"
+            aria-controls="view-results">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+        <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+      </svg>
+      Resultados
+    </button>
+  </nav>
+
+  <!-- ══════════════════════════════════════
+       VISTA: FORMULARIO DE PARÁMETROS
+  ══════════════════════════════════════ -->
+  <section id="view-form"
+           class="view active"
+           role="tabpanel"
+           aria-labelledby="tab-form">
+
+    <div class="form-section">
+
+      <!-- Columna izquierda -->
+      <div class="form-column">
+
+        <!-- Tarjeta: Población Total (K) -->
+        <div class="input-card" id="card-K">
+          <div class="card-accent blue"></div>
+          <div class="card-header">
+            <div class="card-label-group">
+              <span class="card-label">Parámetro K</span>
+              <span class="card-title">Población Total</span>
+            </div>
+            <div class="card-icon blue" aria-hidden="true">🏙️</div>
+          </div>
+          <div class="input-wrapper">
+            <input type="number"
+                   id="input-K"
+                   class="input-field"
+                   placeholder="Ej. 1000000"
+                   min="2"
+                   step="1"
+                   aria-label="Población total (capacidad de carga K)"
+                   autocomplete="off" />
+          </div>
+          <p class="input-hint">Capacidad de carga máxima del sistema (límite superior de la curva).</p>
+        </div>
+
+        <!-- Tarjeta: Tasa de Crecimiento (r) -->
+        <div class="input-card" id="card-r">
+          <div class="card-accent violet"></div>
+          <div class="card-header">
+            <div class="card-label-group">
+              <span class="card-label">Parámetro r</span>
+              <span class="card-title">Tasa de Crecimiento</span>
+            </div>
+            <div class="card-icon violet" aria-hidden="true">⚡</div>
+          </div>
+          <div class="input-wrapper">
+            <input type="number"
+                   id="input-r"
+                   class="input-field"
+                   placeholder="Ej. 0.3"
+                   min="0.001"
+                   max="10"
+                   step="0.001"
+                   aria-label="Tasa de crecimiento intrínseco r"
+                   autocomplete="off" />
+          </div>
+          <p class="input-hint">Velocidad de propagación. Valores típicos entre 0.1 (lento) y 1.0 (rápido).</p>
+        </div>
+
+      </div><!-- /form-column izquierda -->
+
+      <!-- Columna derecha -->
+      <div class="form-column">
+
+        <!-- Tarjeta: Infectados Iniciales (P0) -->
+        <div class="input-card" id="card-P0">
+          <div class="card-accent cyan"></div>
+          <div class="card-header">
+            <div class="card-label-group">
+              <span class="card-label">Parámetro P₀</span>
+              <span class="card-title">Infectados Iniciales</span>
+            </div>
+            <div class="card-icon cyan" aria-hidden="true">🦠</div>
+          </div>
+          <div class="input-wrapper">
+            <input type="number"
+                   id="input-P0"
+                   class="input-field"
+                   placeholder="Ej. 100"
+                   min="1"
+                   step="1"
+                   aria-label="Población infectada inicial P₀"
+                   autocomplete="off" />
+          </div>
+          <p class="input-hint">Número de casos en el tiempo t = 0. Debe ser menor que la población total.</p>
+        </div>
+
+        <!-- Panel de referencia de ecuación -->
+        <div class="equation-panel" id="equation-ref">
+          <h3>Modelo Matemático</h3>
+          <div class="equation-display">
+            <div class="eq-formula">
+              P(t) = K ÷ (1 + A · e<sup>−rt</sup>)
+            </div>
+            <div class="eq-vars">
+              <div class="eq-var">
+                <span class="symbol">K</span>
+                <span class="definition">Capacidad<br>de carga</span>
+              </div>
+              <div class="eq-var">
+                <span class="symbol">A</span>
+                <span class="definition">(K−P₀)/P₀</span>
+              </div>
+              <div class="eq-var">
+                <span class="symbol">r</span>
+                <span class="definition">Tasa de<br>crecimiento</span>
+              </div>
+              <div class="eq-var">
+                <span class="symbol">t</span>
+                <span class="definition">Tiempo<br>transcurrido</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div><!-- /form-column derecha -->
+
+      <!-- Botón de cálculo (ocupa todo el ancho) -->
+      <button id="btn-calculate"
+              class="btn-calculate"
+              type="button"
+              aria-label="Calcular proyección logística">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true">
+          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+        </svg>
+        Calcular Proyección
+      </button>
+
+    </div><!-- /form-section -->
+  </section>
+
+  <!-- ══════════════════════════════════════
+       VISTA: RESULTADOS
+  ══════════════════════════════════════ -->
+  <section id="view-results"
+           class="view"
+           role="tabpanel"
+           aria-labelledby="tab-results">
+
+    <div class="results-grid">
+
+      <!-- Métricas rápidas -->
+      <div class="metrics-row">
+
+        <div class="metric-card metric-blue" id="metric-card-K">
+          <div class="metric-label">Capacidad de carga (K)</div>
+          <div class="metric-value" id="meta-K">—</div>
+          <div class="metric-sub">Población total susceptible</div>
+          <div class="metric-bar"></div>
+        </div>
+
+        <div class="metric-card metric-cyan" id="metric-card-P0">
+          <div class="metric-label">Infectados iniciales (P₀)</div>
+          <div class="metric-value" id="meta-P0">—</div>
+          <div class="metric-sub">Casos en t = 0</div>
+          <div class="metric-bar" style="background:linear-gradient(90deg,var(--accent-cyan),var(--accent-blue))"></div>
+        </div>
+
+        <div class="metric-card metric-green" id="metric-card-A">
+          <div class="metric-label">Constante A</div>
+          <div class="metric-value" id="meta-A">—</div>
+          <div class="metric-sub">A = (K − P₀) / P₀</div>
+          <div class="metric-bar" style="background:linear-gradient(90deg,var(--accent-green),var(--accent-cyan))"></div>
+        </div>
+
+        <div class="metric-card metric-orange" id="metric-card-tmax">
+          <div class="metric-label">Horizonte simulado (t)</div>
+          <div class="metric-value" id="meta-tmax">—</div>
+          <div class="metric-sub">Tiempo hasta 99% de saturación</div>
+          <div class="metric-bar" style="background:linear-gradient(90deg,var(--accent-orange),var(--accent-red))"></div>
+        </div>
+
+      </div><!-- /metrics-row -->
+
+      <!-- Panel del Gráfico -->
+      <div class="chart-panel">
+        <div class="chart-header">
+          <div>
+            <div class="chart-title">Curva de Crecimiento Logístico</div>
+            <div class="chart-subtitle">Mueve el cursor sobre la gráfica para ver valores exactos</div>
+          </div>
+          <div class="legend" aria-label="Leyenda de la gráfica">
+            <div class="legend-item">
+              <div class="legend-dot blue"></div>
+              Curva P(t)
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot orange"></div>
+              Límite K
+            </div>
+            <div class="legend-item">
+              <div class="legend-dot cyan"></div>
+              P₀ inicial
+            </div>
+          </div>
+        </div>
+
+        <div class="canvas-wrapper">
+          <canvas id="chart-canvas"
+                  role="img"
+                  aria-label="Gráfica de la curva logística de crecimiento de infectados a lo largo del tiempo"></canvas>
+          <div id="chart-tooltip" class="chart-tooltip" role="tooltip" aria-live="polite"></div>
+        </div>
+      </div><!-- /chart-panel -->
+
+      <!-- Panel de Tabla de Datos -->
+      <div class="table-panel">
+        <div class="table-header">
+          <div>
+            <div class="chart-title">Tabla de Proyección</div>
+            <div class="chart-subtitle">Datos seleccionados a lo largo del tiempo de simulación</div>
+          </div>
+        </div>
+
+        <div class="table-scroll">
+          <table class="data-table" aria-label="Tabla de datos de la proyección logística">
+            <thead>
+              <tr>
+                <th scope="col">Tiempo (t)</th>
+                <th scope="col">Infectados P(t)</th>
+                <th scope="col">% de K</th>
+                <th scope="col">Progreso</th>
+                <th scope="col">Δ Variación</th>
+                <th scope="col">Fase</th>
+              </tr>
+            </thead>
+            <tbody id="table-body">
+              <tr>
+                <td colspan="6">
+                  <div class="empty-state">
+                    <span class="empty-icon" aria-hidden="true">📊</span>
+                    <p>Ingresa los parámetros y presiona <strong>Calcular Proyección</strong> para ver los resultados.</p>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div><!-- /table-panel -->
+
+    </div><!-- /results-grid -->
+  </section>
+
+</div><!-- /app-wrapper -->
+
+<!-- Toast de notificación -->
+<div id="toast" class="toast" role="alert" aria-live="assertive"></div>
+
+<script src="script.js"></script>
+</body>
+</html>
